@@ -1,14 +1,84 @@
----
----
-
-html {
+.the_background {
     background-color: black;
-    image-rendering: pixelated;
     background-image: url("/assets/images/simple_wide_purple.png");
     background-repeat: repeat;
+    transform: rotate(30deg);
+    min-height: 100%; 
+    z-index: -100;
+
+}
+
+html {
+    height: 100%;
+    margin: 0;
+    /* background-color: #fa03fa; */
+    background-color: rgb(2,2,2);
+    /* background-image: url("/assets/images/simple_wide_purple.png"); */
+    /* background-repeat: repeat; */
+    /* transform: rotate(30deg); */
+}
+
+a:link {
+    color: lightblue
+}
+
+a:visited {
+    color: rgb(255, 231, 234)
+}
+
+
+/* mouse over link */
+a:hover {
+    color: hotpink;
+}
+
+/* selected link */
+a:active {
+    color: lightgreen;
 }
 
 body {
     background-color: transparent;
-    color: white
+    color: lightcyan
+}
+
+/* p {
+    display: table; // background color wrapped tight
+    
+    
+    padding:5px;
+    background-color: rgb(10,10,10);
+} */
+
+.moses_name {
+    text-align: center;
+}
+
+.site-header {
+    border-style: none none dotted none;
+    border-color: darkmagenta;
+    
+    padding-bottom : 10px
+
+    /* border-top-width: 100px; */
+    /* background-color: aliceblue; */
+  }
+
+.site-footer {
+    border-style: dotted none none none;
+    border-color: darkmagenta;
+    
+    padding-top: 10px
+
+    /* border-top-width: 100px; */
+    /* background-color: aliceblue; */
+  }
+
+.svg-icon {
+    width: 16px;
+    height: 16px;
+    display: inline-block;
+    fill: white;
+    padding-right: 5px;
+    vertical-align: text-top;
 }

@@ -4,14 +4,9 @@ layout: default
 ---
 
 
-
 <html>
-    <link rel="stylesheet" href="/assets/css/main.css">
     <body>
       <p>page not found. perhaps this lamp can help you.</p>
-      
-
-
-      <img src="/assets/images/lamp.jpg" alt="lamp"></img>
+      <img src="/assets/images/lamp.jpg" alt="lamp">
     </body>
 </html>
