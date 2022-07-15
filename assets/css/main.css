@@ -4,7 +4,7 @@
 html {
     background-color: black;
     image-rendering: pixelated;
-    background-image: url("/assets/img/simple_wide_purple.png");
+    background-image: url("/assets/images/simple_wide_purple.png");
     background-repeat: repeat;
 }
 
