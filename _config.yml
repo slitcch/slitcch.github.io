@@ -6,3 +6,9 @@ title: "Moses blog" # the name of your site, e.g. ACME Corp.
 twitter_username: mosesturnervevo
 github_username: slitcch
 instagram_username: mosesturnervevo
+
+content:
+  ordered_header_pages: 
+    - index.markdown
+    - blog.markdown
+

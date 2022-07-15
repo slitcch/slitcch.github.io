@@ -1,8 +1,10 @@
 <header class="site-header" role="banner">
 
   <div class="wrapper">
-    {%- assign default_paths = site.pages | map: "path" -%}
-    {%- assign page_paths = site.header_pages | default: default_paths -%}
+    {%- assign page_paths = site.content.ordered_header_pages -%}
+
+    <!-- {{site.content.ordered_header_pages | inspect}} -->
+
 
     <p class="moses_name">moses turner's websdite!</p>
 

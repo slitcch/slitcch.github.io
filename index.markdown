@@ -6,7 +6,7 @@ layout: home
 title: home
 ---
 
-hello I am moses. I made this websot so I can put stuff here when I want to put stuff somewhere. am a transhumanist catgirl in VR when I have time, I like the idea of going to space and I think we should keep making technology better.
+hello I am moses. I made this websot so I can put stuff here when I want to put stuff somewhere. i am vegetarianish most of the time, it feels like killing animals for food is unnecessary at this point. also am a transhumanist catgirl in VR when I have time, I like the idea of going to space and I think we should keep making technology better.
 
 some other interests follow:
 
@@ -27,8 +27,13 @@ some other interests follow:
     * StereoKit
 
 
+a virus you can run:
 ```cpp
+#include <stdio.h>
+
 int main() {
     printf("I love you\n");
 }
+
 ```
+save this file to `hi.c` then run `gcc hi.c -o hi && ./hi` and you will have a virus 
