@@ -51,6 +51,18 @@
 
   }
 
+  .overlay_outer_2 {
+    /* Not sure what position: fixed; does but we need it. */
+    position: fixed;
+    /* Make it Really Big so that you don't see the edges*/
+    width: 100%;
+    height: 100%;
+    /* Move it 50% of the way across and 50% of the way down*/
+    /* ie. put it in the center */
+    transform: rotate(10deg);
+
+  }
+
 .overlay {
     width: 100%;
     height: 100%;
@@ -61,7 +73,7 @@
     /* transform: rotate(-25deg); */
     /* transform-origin: 0% 0%; */
     /* animation: 0.5s rotate-left infinite linear; */
-    animation: 400s rotate-left infinite linear;
+    animation: 1000s rotate-left infinite linear;
 }
 
 @keyframes rotate-left {
