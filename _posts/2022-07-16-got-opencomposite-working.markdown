@@ -5,6 +5,8 @@ date:   2022-07-16 00:00:00 +0100
 categories: update
 ---
 
+\[WIP, come back in a few hours\]
+
 Hey friends, this is super cool, somehow I put out enough fires that I can play VRChat on Linux! Check it out:
 
 <iframe title="vrchat with opencomposite/monado" src="https://diode.zone/videos/embed/04d23ef5-db0f-4a40-974a-53ab5cc4abf3" allowfullscreen="" sandbox="allow-same-origin allow-scripts allow-popups" width="560" height="315" frameborder="0"></iframe>
@@ -17,7 +19,7 @@ Let me define some terms:
 
 * OpenVR: An API that Valve developed to do the above.
 
-* OpenXR: A newer API developed by a lot of people to do the above. Most people would argue that it's better than OpenVR. In my limited experience I'd agree that it's better, but it doesn't matter because I have to use it for reasons.
+* OpenXR: A newer API developed as a Khronos specification by many different groups, notably including Valve and Collabora, to do the above. Most people would argue that it's better than OpenVR. In my limited experience I'd agree that it's better, but it doesn't matter because I have to use it for reasons.
 
 * SteamVR: A runtime that implements OpenVR and OpenXR, and is specifically designed to work nicely with Valve Index, and Vive headsets, and for supporting community plugins.
 
@@ -34,15 +36,15 @@ Well there's this thing called [OpenComposite](https://gitlab.com/znixian/OpenOV
 * VRChat only ran at like 15fps, and indeed *any* Vulkan OpenVR app, even native ones, ran really slow.
 * libsurvive, the open-source reverse-engineered implementation of Lighthouse tracking that I use in my setup, for some reason was hogging my Index's microphone device, so I couldn't actually use it to talk.
 
-The second one was an easy & fun fix, and you can see it in all its glory [here.](https://github.com/cntools/libsurvive/pull/274/commits/0ad93398b7ae05922ef9388b47e50fb2f7a49b9d) The interesting thing here is that one of the USB devices that represented the interface for talking to one of the controllers was also somehow a USB microphone device. Meaning that when we tried to grab the talking-to-controllers devices, we also grabbed the microphone device. My PR just goes through libusb's method of seeing "hey what interfaces does this device have" and makes sure libsurvive leaves any audio devices alone. Works great so far.
+The second one was an easy & fun fix, and you can see it in all its glory [here.](https://github.com/cntools/libsurvive/pull/274/commits/0ad93398b7ae05922ef9388b47e50fb2f7a49b9d) The interesting thing here is that one of the USB devices that represented the interface for talking to one of the controllers was also somehow a USB microphone device. Meaning that when we tried to grab the talking-to-controllers devices, we also grabbed the microphone device. My PR just goes through libusb's method of seeing "hey what interfaces does this device have" and makes sure libsurvive leaves any audio interfaces alone. Works great so far.
 
-The first one was very interesting, and caused me to learn a lot more Vulkan. I’m still somewhat ambivalent about whether or not I want to live the life of a graphics programmer, but it’s getting somewhat hard to avoid doing it from time to time.
+The first one was very interesting, and caused me to learn a lot more Vulkan. I’m still somewhat ambivalent about whether or not I *want* to live the life of a graphics programmer, but it’s getting somewhat hard to avoid doing it from time to time.
 
-Anyway, the reason things are hard graphics-wise for OpenComposite relates to 📢📢📢Allocation!!!!📢📢📢 Basically, when the app wants to give an image to the runtime to display to the user, we have to have a spot on the GPU for that image to exist. We have to do weird stuff with graphics APIs to get the image to show up in both the runtime and application process - normally, for security, programs can't see each others' memory, and because of that it's always kind of complicated for two programs to share the same resource at all. With OpenVR, the app creates this image on the GPU (with all the weird flags that specify that Vulkan needs to set it up such that it'll work if we share this image with another process), then sending this image to the OpenVR runtime, once per view (so, usually, twice.) Then, the runtime takes this image, distorts it and displays it on the headset.
+Anyway, the reason things are hard graphics-wise for OpenComposite relates to 📢📢📢Allocation!!!!📢📢📢 Basically, when the app wants to give an image to the runtime to display to the user, we have to have a spot on the GPU for that image to exist. We have to do weird stuff with graphics APIs to get the image to show up in both the runtime and application process - normally, for security, programs can't see each others' memory, and because of that it's always kind of complicated for two programs to share the same resource. With OpenVR, the app creates this image on the GPU (with all the weird flags that specify that Vulkan needs to set it up such that it'll work if we share this image with another process), then sending this image to the OpenVR runtime, once per view (so, usually, twice.) Then, the runtime takes this image, distorts it and displays it on the headset.
 
 So it's not obvious, but it's *really bad* that the app is the one that allocates the swapchain image here. The runtime might want specific flags set on the image so that it can do specific things with it when distorting/doing whatever else is required to the image, but the image has already been allocated, it can't do those now. So, if you have a problem, your best bet is to just copy the image over to a new image you've allocated yourself, as the runtime.
 
-OpenXR does it the opposite way, and has opposite problems - instead, the *runtime* allocates the swapchain images and sends those to the *app*. This might be bad for the app, since maybe the app needs to set specific flags on the image to do specific render passes (I don't know this; don't know enough about gamedev.) In practice this seems to not be a huge problem, but the point is that both ways are annoying, and I refuse to pick a side here.
+OpenXR does it the opposite way, and has opposite problems - instead, the *runtime* allocates the swapchain images and sends those to the *app*. This might be bad for the app, since maybe the app needs to set specific flags on the image to do specific render passes (I don't know this; don't know enough details; could be wrong.) In practice this seems to not be a huge problem, but the point is that both ways are annoying, and I refuse to pick a side here.
 
 And they're mutually incompatible with each-other. If we bridge OpenVR and OpenXR, the app allocates an image and writes to it, and the runtime allocates an image and reads from it. These two images are not the same image, so unless we do something the runtime is going to get a black/garbage screen! There are two potential fixes: one, add a crazy layer to Vulkan that checks every `vkCreateImage`, looks for ones that look like they are swapchain images, and instead of allocating something new it just returns the memory backing the runtime's images. This would be hard, so we don't do that. Instead OpenComposite just gets the app's image and the runtime's image, and copies the data from the app to the runtime. On reasonably powerful graphics cards (which we can somewhat expect to have, considering OpenComposite is made by and for PCVR enthusiasts) this performs fine, but it's not ideal.
 
@@ -75,4 +77,54 @@ typedef struct XrGraphicsBindingVulkanKHR {
 } XrGraphicsBindingVulkanKHR;
 ```
 
-Notice something? 
+Notice something? For some reason unknown to me, OpenVR asks for a VkQueue and a queue family index, instead of just a queue index and queue family index. Which meant that when the original Vulkan compositor implementation was written in OpenComposite, I think they thought that we *had* to use different instances, devices and queues for the app and runtime handles. This is *bad*, because you can't copy straight across devices. (Actually I found that you *can*, at least under RADV, but it's undefined behaviour under the Vulkan spec so a) it doesn't pass validation layers and b) you might be causing all kinds of problems elsewhere.) Instead, the original impelementation allocated a *third* texture with all the flags set such that you can export its memory across VkDevices. This worked, but the second copy + waiting for stuff to synchronize across devices was *slooowww*.
+
+During my initial foray into this, I had no idea about the rules for importing and exporting buffers, and this third image came as a big surprise and source of confusion. *Why the hell was this thing here? How is this not an obvious inefficiency? There's no way there's not a good reason for this.* I initially tried copying straight from the app image to the runtime image, and it *worked*, but when I ran validation layers I discovered the reason:
+
+```
+VUID-vkCmdCopyImage-commonparent(ERROR / SPEC): msgNum: -1823964070 - Validation Error: [ VUID-vkCmdCopyImage-commonparent ] Object 0: handle = 0x7f795f70, type = VK_OBJECT_TYPE_INSTANCE; | MessageID = 0x9348845a | Object 0x60fe2400000009a9 of type VkImage was not created, allocated or retrieved from the correct device. The Vulkan spec states: Each of commandBuffer, dstImage, and srcImage must have been created, allocated, or retrieved from the same VkDevice (https://www.khronos.org/registry/vulkan/specs/1.3-extensions/html/vkspec.html#VUID-vkCmdCopyImage-commonparent)
+    Objects: 1
+        [0] 0x7f795f70, type: 1, name: NULL
+```
+
+UH. OH. Yeah there is your problem. Vulkan is so explicit and conservative about what you're allowed to do that you often end up in really sticky situations like this, as compared to, say, OpenGL or D3D10.
+
+Okay, so... shit... what do we do? We can wait for the app to give us an image, initialize our OpenXR session with the app's VkInstance, VkPhysicalDevice and VkDevice (and hope it doesn't switch these up on us (none of the apps I've tested do this FWIW)), but how do we get the right queue? And what if there are other pitfalls?
+
+After many, many, many false starts, and many hours discussing with community members and coworkers, I realized you can do this:
+
+```cpp
+static void find_queue_family_and_queue_idx(VkDevice dev, VkPhysicalDevice pdev, VkQueue desired_queue, uint32_t& out_queueFamilyIndex, uint32_t& out_queueIndex)
+{
+	uint32_t queue_family_count;
+	vkGetPhysicalDeviceQueueFamilyProperties(pdev, &queue_family_count, NULL);
+
+	std::vector<VkQueueFamilyProperties> hi(queue_family_count);
+	vkGetPhysicalDeviceQueueFamilyProperties(pdev, &queue_family_count, hi.data());
+	OOVR_LOGF("number of queue families is %d", queue_family_count);
+
+	for (int i = 0; i < queue_family_count; i++) {
+		OOVR_LOGF("queue family %d has %d queues", i, hi[i].queueCount);
+		for (int j = 0; j < hi[i].queueCount; j++) {
+			VkQueue tmp;
+			vkGetDeviceQueue(dev, i, j, &tmp);
+			if (tmp == desired_queue) {
+				OOVR_LOGF("Got desired queue: %d %d", i, j);
+				out_queueFamilyIndex = i;
+				out_queueIndex = j;
+				return;
+			}
+		}
+	}
+	OOVR_ABORT("Couldn't find the queue family index/queue index of the queue that the OpenVR app gave us!"
+	           "This is really odd and really shouldn't ever happen");
+}
+```
+<html>
+      <img src="/assets/images/notmade.jpg" alt="BAD IDEA" height="300">
+</html>
+
+So, this code just assumes there's an isomorphism between queues and queue indices, iterates over all the queue family indices and queue indices that in the VkDevice that the app provides us, and compares their handles to the VkQueue that the app gave us. Problem is that I don't know if the Vulkan spec does guarantees that queues/queue indices we ask for and the VkQueue handles that the Vulkan implementation gives out are isomorphic! Like, RADV does, but do all of them? Like I guess RADV probably allocates all the handles when you run VkCreateInstance and just keeps handing out the same ones, but does it *have* to? Will this break on other Vulkan implementations? I have no idea!
+
+
+Aaannnyyywaaayyyy, with that house-of-cards fix in place, I was able to really cleanly delete OpenComposite's 

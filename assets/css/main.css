@@ -73,7 +73,7 @@
     /* transform: rotate(-25deg); */
     /* transform-origin: 0% 0%; */
     /* animation: 0.5s rotate-left infinite linear; */
-    animation: 1000s rotate-left infinite linear;
+    animation: 2000s rotate-left infinite linear;
 }
 
 @keyframes rotate-left {
@@ -82,8 +82,14 @@
         transform-origin: 50% 50%;
     }
 
-    100% {
+    50%
+
+    {
         transform: rotate(-360deg);
+    }
+
+    100% {
+        transform: rotate(0deg);
     }
 }
 
@@ -159,4 +165,9 @@ body {
     fill: white;
     padding-right: 5px;
     vertical-align: text-top;
+}
+
+/* from inspect element'ing how Jekyll makes code blocks. YMMV. */
+code {
+    white-space: pre-wrap;
 }
