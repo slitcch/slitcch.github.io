@@ -1,4 +1,4 @@
-.the_background {
+/* .the_background_old {
     background-color: black;
     background-image: url("/assets/images/simple_wide_purple.png");
     background-repeat: repeat;
@@ -8,11 +8,79 @@
 
 }
 
+.the_background {
+    background-color: black;
+    background-image: url("/assets/images/simple_wide_purple.png");
+    background-repeat: repeat;
+    /* transform: rotate(30deg); */
+/* min-height: 100%; 
+    z-index: -100;
+
+    -webkit-animation:180s rotate-left infinite linear;
+    -moz-animation:180s rotate-left infinite linear;
+    -o-animation:180s rotate-left infinite linear;
+    -ms-animation:180s rotate-left infinite linear;
+    animation:180s rotate-left infinite linear; */
+
+/* } */
+
+.overlay_old {
+    position: fixed;
+    width: 200%;
+    height: 200%;
+    left: -1000;
+    top: -1000;
+    background-image: url("/assets/images/simple_wide_purple.png");
+    background-repeat: repeat;
+    transform: rotate(25deg);
+    z-index: -10;
+}
+/* https://stackoverflow.com/questions/18309698/centering-div-that-is-wider-than-its-parent-without-setting-negative-left-margin */
+.overlay_outer {
+    /* Not sure what position: fixed; does but we need it. */
+    position: fixed;
+    /* Make it Really Big so that you don't see the edges*/
+    width: 5000%;
+    height: 5000%;
+    /* Move it 50% of the way across and 50% of the way down*/
+    /* ie. put it in the center */
+    left: 50%;
+    top: 50%;
+    transform: translateX(-50%) translateY(-50%);
+    z-index: -10;
+
+  }
+
+.overlay {
+    width: 100%;
+    height: 100%;
+
+
+    background-image: url("/assets/images/simple_wide_purple.png");
+    background-repeat: repeat;
+    /* transform: rotate(-25deg); */
+    /* transform-origin: 0% 0%; */
+    /* animation: 0.5s rotate-left infinite linear; */
+    animation: 400s rotate-left infinite linear;
+}
+
+@keyframes rotate-left {
+    0% {
+        transform: rotate(0deg);
+        transform-origin: 50% 50%;
+    }
+
+    100% {
+        transform: rotate(-360deg);
+    }
+}
+
+
 html {
     height: 100%;
     margin: 0;
     /* background-color: #fa03fa; */
-    background-color: rgb(2,2,2);
+    background-color: rgb(2, 2, 2);
     /* background-image: url("/assets/images/simple_wide_purple.png"); */
     /* background-repeat: repeat; */
     /* transform: rotate(30deg); */
@@ -57,22 +125,20 @@ body {
 .site-header {
     border-style: none none dotted none;
     border-color: darkmagenta;
-    
-    padding-bottom : 10px
 
-    /* border-top-width: 100px; */
-    /* background-color: aliceblue; */
-  }
+    padding-bottom: 10px
+        /* border-top-width: 100px; */
+        /* background-color: aliceblue; */
+}
 
 .site-footer {
     border-style: dotted none none none;
     border-color: darkmagenta;
-    
-    padding-top: 10px
 
-    /* border-top-width: 100px; */
-    /* background-color: aliceblue; */
-  }
+    padding-top: 10px
+        /* border-top-width: 100px; */
+        /* background-color: aliceblue; */
+}
 
 .svg-icon {
     width: 16px;

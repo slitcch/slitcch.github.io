@@ -6,7 +6,7 @@ layout: home
 title: home
 ---
 
-hello I am moses. I made this websot so I can put stuff here when I want to put stuff somewhere. i am vegetarianish most of the time, it feels like killing animals for food is unnecessary at this point. also am a transhumanist catgirl in VR when I have time, I like the idea of going to space and I think we should keep making technology better.
+hello I am moses. I made this websot so I can put stuff here when I want to put stuff somewhere. i am a transhumanist catgirl in VR when I have time, I like the idea of going to space and I think we should keep making technology better.
 
 some other interests follow:
 
