@@ -5,8 +5,6 @@ date:   2022-07-16 00:00:00 +0100
 categories: update
 ---
 
-\[WIP, come back in a few hours\]
-
 Hey friends, this is super cool, somehow I put out enough fires that I can play VRChat on Linux! Check it out:
 
 <iframe title="vrchat with opencomposite/monado" src="https://diode.zone/videos/embed/04d23ef5-db0f-4a40-974a-53ab5cc4abf3" allowfullscreen="" sandbox="allow-same-origin allow-scripts allow-popups" width="560" height="315" frameborder="0"></iframe>
@@ -27,13 +25,13 @@ Let me define some terms:
 
 * OpenComposite: a library that I help develop for fun that pretends to be an OpenVR runtime while really just translating its calls to OpenXR.
 
-Basically... on PC, VRChat is OpenVR only. So, usually, it only works with SteamVR. And SteamVR on Linux *sucks*, like, a lot. Last I tested it it had like 150ms head tracking latency, which was so bad that it didn't even make me sick; it just completely stopped being immersive.
+Basically... on PC, VRChat is OpenVR only. So, usually, it only works with SteamVR. And SteamVR on Linux *sucks*, like, a lot. Last I tried it, it had around 150ms head tracking latency, which was so bad that it didn't even make me sick; it just completely stopped being immersive.
 
 I use Linux for my job, and it's annoying to have to reboot to Windows for this one thing and not have all my regular stuff. Since VRChat purportedly only works with SteamVR and SteamVR for Linux isn't an option, what can we do?
 
 Well there's this thing called [OpenComposite](https://gitlab.com/znixian/OpenOVR). It's mostly developed by [this guy](https://znix.xyz/) but also by a bunch of other people [here](https://discord.gg/2EsWQk8ktp). It's a really cool idea, and since Monado is so familiar to me, would alleviate my problems, if it worked. ZNix recently got the input bindings working well enough that VRChat *worked* with OpenComposite, but there were two big problems:
 
-* VRChat only ran at like 15fps, and indeed *any* Vulkan OpenVR app, even native ones, ran really slow.
+* VRChat only ran at ~15fps, and indeed *any* Vulkan OpenVR app, even native ones, ran really slow.
 * libsurvive, the open-source reverse-engineered implementation of Lighthouse tracking that I use in my setup, for some reason was hogging my Index's microphone device, so I couldn't actually use it to talk.
 
 The second one was an easy & fun fix, and you can see it in all its glory [here.](https://github.com/cntools/libsurvive/pull/274/commits/0ad93398b7ae05922ef9388b47e50fb2f7a49b9d) The interesting thing here is that one of the USB devices that represented the interface for talking to one of the controllers was also somehow a USB microphone device. Meaning that when we tried to grab the talking-to-controllers devices, we also grabbed the microphone device. My PR just goes through libusb's method of seeing "hey what interfaces does this device have" and makes sure libsurvive leaves any audio interfaces alone. Works great so far.
@@ -91,7 +89,7 @@ UH. OH. Yeah there is your problem. Vulkan is so explicit and conservative about
 
 Okay, so... shit... what do we do? We can wait for the app to give us an image, initialize our OpenXR session with the app's VkInstance, VkPhysicalDevice and VkDevice (and hope it doesn't switch these up on us (none of the apps I've tested do this FWIW)), but how do we get the right queue? And what if there are other pitfalls?
 
-After many, many, many false starts, and many hours discussing with community members and coworkers, I realized you can do this:
+After many, many, many false starts, and many hours discussing with community members and coworkers (especially Ryan Bjorn and Christoph, thank you guys so so so so much for being so patient with me and taking the time to really think about my problems, no way I could have done this without your help & advice), I realized you can do this:
 
 ```cpp
 static void find_queue_family_and_queue_idx(VkDevice dev, VkPhysicalDevice pdev, VkQueue desired_queue, uint32_t& out_queueFamilyIndex, uint32_t& out_queueIndex)
@@ -124,7 +122,38 @@ static void find_queue_family_and_queue_idx(VkDevice dev, VkPhysicalDevice pdev,
       <img src="/assets/images/notmade.jpg" alt="BAD IDEA" height="300">
 </html>
 
-So, this code just assumes there's an isomorphism between queues and queue indices, iterates over all the queue family indices and queue indices that in the VkDevice that the app provides us, and compares their handles to the VkQueue that the app gave us. Problem is that I don't know if the Vulkan spec does guarantees that queues/queue indices we ask for and the VkQueue handles that the Vulkan implementation gives out are isomorphic! Like, RADV does, but do all of them? Like I guess RADV probably allocates all the handles when you run VkCreateInstance and just keeps handing out the same ones, but does it *have* to? Will this break on other Vulkan implementations? I have no idea!
+So, this code just assumes there's an isomorphism between queues and queue indices, iterates over all the queue family indices and queue indices that in the VkDevice that the app provides us, and compares their handles to the VkQueue that the app gave us. Problem is that I don't know if the Vulkan spec does guarantees that queues/queue indices we ask for and the VkQueue handles that the Vulkan implementation gives out are isomorphic! RADV does seem to have this isomorphism, but do all of them? I guess RADV probably allocates all the handles when you run VkCreateInstance and just keeps handing out the same ones, but does it *have* to? Will this break on other Vulkan implementations? I have no idea!
 
 
-Aaannnyyywaaayyyy, with that house-of-cards fix in place, I was able to really cleanly delete OpenComposite's 
+Aaannnyyywaaayyyy, with that house-of-cards fix in place, I was able to really cleanly delete OpenComposite's vulkan compositor's third-buffer-allocation stuff and just copy directly from the app's image to the runtime's image. It asserts if the app changes up it's VkInstance/VkDevice/VkQueue, but so far no apps do that, and so far no users downstream have had real problems with it. That MR is [here](https://gitlab.com/znixian/OpenOVR/-/merge_requests/35) for all the world to see.
+
+Anyway, after that, VRChat just started working quite well! There are lots of problems sure, but in general the UIs work well (even through *two* layers of emulation - Proton *and* OpenComposite,) my avatar displays correctly, I can talk to people and while there is some jank, there aren't really any showstoppers left, I can just use it.
+
+However the compositor is still trash. It's doing a whole lot more `vkQueueWaitIdle`s than it needs to, which makes the copies take around 3ms in total - too long. When big games put the GPU under pressure and/or take over about 5ms to render (assuming the displays run at 120Hz here,) this can make the frames tank a little more than they would under a good compositor. I can fix this but I need to do some rather gnarly refactors first. - specifically, I really want us to wait on the queue only on the *next* frame, so that a) we can safely do both copies concurrently and b) bundle up the wait on the image copy with the other stuff Monado does internally such that the next-frame-wait only actually happens very rarely. It'll happen, just will take time.
+
+Also, we aren't yet reporting the correct color spaces to Monado. So, when VRChat gives us sRGB images, we still report them as linear and get too-bright-colors. That'll be fixed very soon.
+
+Aand a whole lot more - here's my crazy long todo:
+* SPDX Copyright headers
+* Try to collect global state into structs and do a bunch of `magic_global_state = new GlobalStateXY()`
+* Remove some indirection between compositor, OpenVR wrapper, and OpenXR wrapper
+* Add fallback for if an evil app switches up the VkInstance/VkPhysicalDevice/VkDevice/VkQueue between frames
+* Upstream Perfetto/Percetto tracing
+* Write a bridge between XR_EXT_hand_tracking and OpenVR skeletal input
+* Knuckles controller profile support
+* cmake_in instead of compiler options
+* Continuous integration on GitLab MRs
+* fix colour spaces on Vulkan
+
+todo on Monado:
+* Playspace mover
+* Make aim->grip offset perfectly match SteamVR
+
+All that constitutes a few weeks of full-time work, so I'll be getting through it rather slowly along with my real job and other things I do for fun.
+
+Okay, anyway, that's pretty much all I've got for this post. 
+
+VRChat will always hold a special place in my heart since I randomly joined one of my friend groups on there about 5 months ago. I'd always had this funny feeling my entire life. Something like, gah this body is weird and I don't like it and there's something wrong with me and <...>. When I tried VRChat, I discovered really fast that for some reason I really liked to inhabit female and non-binary avatars, and no seriously not in a weird way and .... *oh. I have dysphoria don't I.* There are a lot of memes about VRChat's gender shredder effect, but I dunno, it was definitely a great thing for me. It turned that general shitty feeling I had for the first ~2 decades of my life into a specific, measureable and solveable problem. I've started to edit my real-life appearance with this in mind, and I have to say I'm much happier with the way things are now. And when I'm not safe being my true self IRL, VR is my haven where I can ignore my real body for a while and just enjoy life. It sounds silly, but being able to much more reasonably hop on VR whenever I want without losing my work has been really nice already.
+
+I'll probably make another one showing off further fixes I make. Getting our opticaal hand-tracking working with VRChat will be super fun, for example.
+
